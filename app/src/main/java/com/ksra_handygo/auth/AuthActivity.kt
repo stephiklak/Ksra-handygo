@@ -5,11 +5,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.ksra_handygo.R
+import com.ksra_handygo.MainActivity
 import net.openid.appauth.*
-import android.widget.Button
-
-
 
 class AuthActivity : AppCompatActivity() {
 
@@ -17,43 +14,34 @@ class AuthActivity : AppCompatActivity() {
     private var authRequest: AuthorizationRequest? = null
 
     private val AUTH_REQUEST_CODE = 101
+
+    // Your Cognito details
     private val REGION = "us-east-2"
-    private val USER_POOL_ID = "us-east-2_vafrricx7"  // Your Cognito User Pool ID
-    private val CLIENT_ID = "7luss1jt3rqv467pqlrobur2o8"  // Your Cognito App Client ID
+    private val USER_POOL_ID = "us-east-2_vafrricx7"
+    private val CLIENT_ID = "7luss1jt3rqv467pqlrobur2o8"
     private val REDIRECT_URI = Uri.parse("ksrafisherman://callback")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_auth)
-
         authService = AuthorizationService(this)
 
-        val loginButton = findViewById<Button>(R.id.btnLogin)
-        loginButton.setOnClickListener {
-            Log.d("CognitoAuth", "Login button clicked.")
-            fetchCognitoConfiguration()
-        }
+        Log.d("CognitoAuth", "App started, fetching Cognito config...")
+        fetchCognitoConfiguration()
     }
 
     private fun fetchCognitoConfiguration() {
         val issuerUri = Uri.parse("https://cognito-idp.$REGION.amazonaws.com/$USER_POOL_ID")
-        Log.d("CognitoAuth", "🔍 Fetching configuration from: $issuerUri")
-
         AuthorizationServiceConfiguration.fetchFromIssuer(issuerUri) { config, ex ->
             if (ex != null) {
-                Log.e("CognitoAuth", "Failed to fetch config: ${ex.errorDescription}")
-                ex.printStackTrace()
+                Log.e("CognitoAuth", "Failed to fetch Cognito config: ${ex.errorDescription}")
                 return@fetchFromIssuer
             }
             if (config != null) {
-                Log.d("CognitoAuth", "Config fetched successfully.")
+                Log.d("CognitoAuth", "Cognito config fetched successfully.")
                 startLogin(config)
-            } else {
-                Log.e("CognitoAuth", "No configuration returned.")
             }
         }
     }
-
 
     private fun startLogin(serviceConfig: AuthorizationServiceConfiguration) {
         authRequest = AuthorizationRequest.Builder(
@@ -75,7 +63,7 @@ class AuthActivity : AppCompatActivity() {
             val response = AuthorizationResponse.fromIntent(data)
             val ex = AuthorizationException.fromIntent(data)
             if (response != null) {
-                Log.d("CognitoAuth", "Authorization success. Exchanging token...")
+                Log.d("CognitoAuth", "Authorization success, exchanging code for token...")
                 exchangeCodeForToken(response)
             } else {
                 Log.e("CognitoAuth", "Authorization failed: ${ex?.errorDescription}")
@@ -91,9 +79,8 @@ class AuthActivity : AppCompatActivity() {
                 Log.d("CognitoAuth", "Access Token: ${tokenResponse.accessToken}")
                 Log.d("CognitoAuth", "ID Token: ${tokenResponse.idToken}")
 
-                // TODO: Save tokens securely (e.g., SharedPreferences)
-                // Then redirect to MainActivity
-                startActivity(Intent(this, com.ksra_handygo.MainActivity::class.java))
+                // You can save tokens securely (e.g., SharedPreferences)
+                startActivity(Intent(this, MainActivity::class.java))
                 finish()
             } else {
                 Log.e("CognitoAuth", "Token exchange failed: ${ex?.errorDescription}")

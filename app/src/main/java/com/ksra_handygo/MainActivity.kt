@@ -2,10 +2,12 @@ package com.ksra_handygo
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.Toast
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import com.ksra_handygo.auth.AuthManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -15,11 +17,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // simple layout with two buttons - you can replace with Compose/View as needed
-        val btnLogin = Button(this).apply { text = "Login (Cognito)" }
+
+        val btnLogin = Button(this).apply { text = "Login with AWS Cognito" }
         val btnLogout = Button(this).apply { text = "Logout" }
-        val layout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(80, 200, 80, 0)
             addView(btnLogin)
             addView(btnLogout)
         }
@@ -28,33 +31,39 @@ class MainActivity : AppCompatActivity() {
         authManager = AuthManager(this)
 
         btnLogin.setOnClickListener {
+            Log.d("CognitoAuth", "Login button clicked → opening Cognito Hosted UI")
             val authIntent = authManager.createAuthIntent()
             startActivityForResult(authIntent, AUTH_REQ_CODE)
         }
 
         btnLogout.setOnClickListener {
+            Log.d("CognitoAuth", "Logout button clicked → redirecting to logout endpoint")
             val endIntent = authManager.createEndSessionIntent()
             if (endIntent != null) startActivityForResult(endIntent, END_SESSION_REQ)
             else Toast.makeText(this, "Logout not available", Toast.LENGTH_SHORT).show()
         }
     }
 
-    @Deprecated("onActivityResult for AppAuth", level = DeprecationLevel.WARNING)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             AUTH_REQ_CODE -> {
-                authManager.handleAuthResponse(data) { success, idToken, accessToken, error ->
-                    if (success) {
-                        Toast.makeText(this, "Login success\nID token len=${idToken?.length}", Toast.LENGTH_LONG).show()
-                        // Save tokens (securely) and call backend with accessToken if needed
-                    } else {
-                        Toast.makeText(this, "Login failed: $error", Toast.LENGTH_LONG).show()
-                    }
+                if (resultCode == RESULT_OK && data != null) {
+                    val idToken = data.getStringExtra("idToken")
+                    val accessToken = data.getStringExtra("accessToken")
+                    Toast.makeText(this, "Login successful!", Toast.LENGTH_LONG).show()
+                    Log.d("CognitoAuth", "ID Token: ${idToken?.take(20)}...")
+                    Log.d("CognitoAuth", "Access Token: ${accessToken?.take(20)}...")
+                } else {
+                    val error = data?.getStringExtra("error") ?: "Unknown error"
+                    Toast.makeText(this, "Login failed: $error", Toast.LENGTH_LONG).show()
+                    Log.e("CognitoAuth", "Login failed: $error")
                 }
             }
+
             END_SESSION_REQ -> {
-                Toast.makeText(this, "Logged out (returned)", Toast.LENGTH_SHORT).show()
+                Log.d("CognitoAuth", "Logout completed, user redirected back.")
+                Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
             }
         }
     }
