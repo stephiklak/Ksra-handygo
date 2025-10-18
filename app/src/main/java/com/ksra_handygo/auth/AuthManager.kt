@@ -17,7 +17,7 @@ class AuthManager(private val context: Context) {
 
     private val clientId = "7luss1jt3rqv467pqlrobur2o8"
     private val redirectUri = Uri.parse("ksrafisherman://callback")
-    private val scope = "openid profile email"
+    private val scope = "email openid phone"
 
     private val authService = AuthorizationService(context)
 
