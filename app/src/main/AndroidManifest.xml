@@ -20,16 +20,15 @@
 
         <!-- Redirect handler for Cognito Hosted UI -->
         <activity
-            android:name="com.ksra_handygo.auth.AuthRedirectHandlerActivity"
-            android:exported="true"
-            android:launchMode="singleTask">
+            android:name="com.ksra_handygo.auth.AuthActivity"
+            android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
                 <data
                     android:scheme="ksrafisherman"
-                    android:host="callback" />
+                    android:host="callback"/>
             </intent-filter>
         </activity>
 
