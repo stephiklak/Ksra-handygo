@@ -4,7 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 
 class TokenStore(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences =
+        context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
 
     fun saveTokens(accessToken: String?, idToken: String?) {
         prefs.edit().apply {
