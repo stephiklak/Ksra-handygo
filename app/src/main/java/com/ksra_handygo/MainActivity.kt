@@ -1,44 +1,85 @@
 package com.ksra_handygo
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
-import androidx.activity.viewModels
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
-import com.ksra_handygo.auth.AuthActivity
-import com.ksra_handygo.auth.TokenStore
+import com.ksra_handygo.services.ServicesFragment
+import com.ksra_handygo.auth.LoginFragment
+import com.ksra_handygo.checkout.CheckoutFragment
+
+enum class PendingDestination { NONE, CHECKOUT }
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var tokenStore: TokenStore
-    private lateinit var btnLogin: Button
-    private lateinit var tvResponse: TextView
+    private var pendingDestination: PendingDestination = PendingDestination.NONE
 
-    private val viewModel: MainViewModel by viewModels()
+    // Register a launcher to start your existing AuthActivity (Cognito AppAuth)
+    private val authLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // Successful login — notify current fragment / route to pending destination
+            onAuthSuccess()
+        } else {
+            // login cancelled or failed
+            onAuthCancelled()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        tokenStore = TokenStore(this)
-        btnLogin = findViewById(R.id.btnLogin)
-        tvResponse = findViewById(R.id.tvResponse)
-
-        btnLogin.setOnClickListener {
-            startActivity(Intent(this, AuthActivity::class.java))
+        // Start with LoginFragment (with Skip option)
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, LoginFragment())
+                .commit()
         }
+    }
 
-        // Observe ViewModel LiveData
-        viewModel.userResponse.observe(this, Observer { response ->
-            tvResponse.text = response // display API data here
-        })
+    fun startAuthFlow() {
+        // Start your existing AuthActivity which exchanges token and returns RESULT_OK on success
+        val i = Intent(this, com.ksra_handygo.auth.AuthActivity::class.java)
+        authLauncher.launch(i)
+    }
 
-        // Once token is available, call backend
-        val token = tokenStore.getAccessToken()
-        if (!token.isNullOrEmpty()) {
-            viewModel.fetchUsers(token)
+    private fun onAuthSuccess() {
+        // If user wanted to go to checkout, do that. Otherwise show services.
+        when (pendingDestination) {
+            PendingDestination.CHECKOUT -> {
+                // clear pending and navigate to checkout
+                pendingDestination = PendingDestination.NONE
+                navigateToCheckout()
+            }
+            PendingDestination.NONE -> {
+                // By default go to Services
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, ServicesFragment())
+                    .commit()
+            }
         }
+    }
+
+    private fun onAuthCancelled() {
+        // Stay where you are. Optionally show a toast or message.
+    }
+
+    fun setPendingCheckoutAndStartAuth() {
+        pendingDestination = PendingDestination.CHECKOUT
+        startAuthFlow()
+    }
+
+    fun navigateToServices() {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, ServicesFragment())
+            .commit()
+    }
+
+    fun navigateToCheckout() {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, CheckoutFragment())
+            .commit()
     }
 }

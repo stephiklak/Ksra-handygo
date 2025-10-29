@@ -11,7 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- MainActivity is the launcher -->
+        <!-- App Entry Point -->
         <activity
             android:name="com.ksra_handygo.MainActivity"
             android:exported="true">
@@ -21,10 +21,13 @@
             </intent-filter>
         </activity>
 
-        <!-- Redirect handler for Cognito Hosted UI -->
+        <!-- 🔐 Cognito Hosted UI Redirect Handler -->
         <activity
             android:name="com.ksra_handygo.auth.AuthActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTask">
+
+            <!-- Must match EXACT Cognito Redirect URI: ksrafisherman://callback -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -33,6 +36,17 @@
                     android:scheme="ksrafisherman"
                     android:host="callback" />
             </intent-filter>
+
+            <!-- (Optional SAFE-PLUS) Deep link if later you want open login via URL -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="handygo"
+                    android:host="login" />
+            </intent-filter>
+
         </activity>
 
     </application>
